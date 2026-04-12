@@ -3,7 +3,7 @@ import { useState } from "react";
 import { SearchOverlay } from "./SearchOverlay";
 import { NotificationBell } from "./NotificationBell";
 
-const LOGO_URL = "https://imgur.com/a/VaHDPIv";
+const LOGO_URL = "https://github.com/Mickeymozy/Mickey-stream/blob/main/icon/Mickey-stream.jpeg";
 
 export const TopBar = () => {
   const [searchOpen, setSearchOpen] = useState(false);

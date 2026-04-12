@@ -64,7 +64,7 @@ const Signup = () => {
             <span className="font-display font-extrabold text-xl text-primary-foreground">R</span>
           </div>
           <h1 className="font-display font-bold text-2xl">
-            LOFT<span className="text-primary">Tv</span>
+            MICKEY<span className="text-primary">Tv</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Create your account</p>
         </div>

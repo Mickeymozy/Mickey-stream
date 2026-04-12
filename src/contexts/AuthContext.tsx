@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
@@ -36,30 +37,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [subscription, setSubscription] = useState<any | null>(null);
 
-  const fetchUserData = async (userId: string) => {
-    // Fetch profile
+  const fetchUserData = async (userId: string, email: string | undefined) => {
+    // 1. HARDCODED ADMIN CHECK
+    // Hapa tunampa u-admin mickidadyhamza@gmail.com moja kwa moja
+    if (email === "mickidadyhamza@gmail.com") {
+      setIsAdmin(true);
+    } else {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
+    }
+
+    // 2. Fetch profile
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
     setProfile(profileData);
 
-    // Check admin role
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
-
-    // Fetch active subscription
+    // 3. Fetch subscription
     const { data: sub } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("user_id", userId)
       .eq("is_active", true)
-      .gte("expires_at", new Date().toISOString())
-      .order("expires_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     setSubscription(sub);
@@ -72,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setTimeout(() => fetchUserData(session.user.id), 0);
+          fetchUserData(session.user.id, session.user.email);
         } else {
           setProfile(null);
           setIsAdmin(false);
@@ -86,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserData(session.user.id);
+        fetchUserData(session.user.id, session.user.email);
       }
       setLoading(false);
     });
@@ -95,6 +99,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // HAPA NDIPO TUNARUKA MFUMO WA KAWAIDA KWA AJILI YAKO
+    if (email === "mickidadyhamza@gmail.com" && password === "MICKEY24@") {
+       // Tunajaribu kuku-sign in kwanza ili upate session
+       const { error } = await supabase.auth.signInWithPassword({ email, password });
+       
+       // Kama account haipo kwenye database bado, tutatoa ujumbe
+       if (error) {
+         toast.error("Admin: Tafadhali jisajili kwanza kwa email hii mara moja kisha uingie.");
+         throw error;
+       }
+       return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };

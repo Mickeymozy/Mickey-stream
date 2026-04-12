@@ -765,7 +765,7 @@ export const VideoPlayer = ({
 
       {/* Watermark */}
       <div className="absolute bottom-12 right-3 z-10 pointer-events-none select-none opacity-50">
-        <span className="text-[10px] sm:text-xs font-bold text-foreground/60 tracking-wider">UHURU STREAM</span>
+        <span className="text-[10px] sm:text-xs font-bold text-foreground/60 tracking-wider">Mickey Stream</span>
       </div>
 
       {/* Loading */}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { SearchOverlay } from "./SearchOverlay";
 import { NotificationBell } from "./NotificationBell";
 
-const LOGO_URL = "https://i.imgur.com/ll3OOCp.jpeg";
+const LOGO_URL = "https://imgur.com/a/ZK3123Z";
 
 export const TopBar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -15,7 +15,7 @@ export const TopBar = () => {
           <div className="flex items-center gap-2">
             <img
               src={LOGO_URL}
-              alt="Uhuru Stream"
+              alt="Mickey Stream"
               className="w-8 h-8 rounded-md object-cover"
             />
             <span className="font-display font-bold text-lg tracking-tight">

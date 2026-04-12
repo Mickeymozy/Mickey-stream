@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const LOGO_URL = "https://github.com/Mickeymozy/Mickey-stream/blob/main/icon/Mickey-stream.jpeg";
+const LOGO_URL = "https://raw.githubusercontent.com/Mickeymozy/Mickey-stream/main/icon/Mickey-stream.jpeg";
 
 const AuthPage: React.FC = () => {
   const { signIn, signUp } = useAuth();

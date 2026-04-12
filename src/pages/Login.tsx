@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const LOGO_URL = "https://i.imgur.com/ll3OOCp.jpeg";
+const LOGO_URL = "https://github.com/Mickeymozy/Mickey-stream/blob/main/icon/Mickey-stream.jpeg";
 
 const AuthPage: React.FC = () => {
   const { signIn, signUp } = useAuth();
@@ -107,11 +107,11 @@ const AuthPage: React.FC = () => {
           <div className="inline-flex flex-col items-center gap-2 mb-3">
             <img
               src={LOGO_URL}
-              alt="LOFT Tv"
+              alt="MICKEY STREAM"
               className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-primary/20"
             />
             <h1 className="text-3xl font-black tracking-tight text-foreground">
-              LOFT <span className="text-primary">Tv</span>
+              MICKEY <span className="text-primary">Tv</span>
             </h1>
           </div>
           <p className="text-muted-foreground text-xs font-medium uppercase tracking-[0.2em]">

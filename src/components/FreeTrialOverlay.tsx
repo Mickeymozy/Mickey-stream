@@ -9,7 +9,7 @@ interface FreeTrialOverlayProps {
 export const FreeTrialOverlay = ({ remainingSeconds, trialExpired }: FreeTrialOverlayProps) => {
   if (trialExpired) {
     const whatsappMessage = encodeURIComponent(
-      "Habari Admin wa Uhuru Stream, nimefanya malipo ya Premium. Hii hapa ni namba yangu ya muamala: "
+      "Habari Admin wa Mickey Stream, nimefanya malipo ya Premium. Hii hapa ni namba yangu ya muamala: "
     );
 
     return (
@@ -24,7 +24,7 @@ export const FreeTrialOverlay = ({ remainingSeconds, trialExpired }: FreeTrialOv
           </div>
 
           <h3 className="text-lg font-black text-[hsl(45,90%,50%)] mb-2">
-            💎 Jiunge na Uhuru Stream Premium!
+            💎 Jiunge na Mickey Stream Premium!
           </h3>
 
           <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
@@ -49,7 +49,7 @@ export const FreeTrialOverlay = ({ remainingSeconds, trialExpired }: FreeTrialOv
             </div>
             <div className="text-sm text-foreground">
               <p className="font-semibold">M-Pesa:</p>
-              <p className="text-muted-foreground">0749755724 - Rusia Oswald</p>
+              <p className="text-muted-foreground">0615944741 - Mickdadi Hamza</p>
             </div>
             <div className="text-sm text-foreground">
               <p className="font-semibold">Tigo Pesa:</p>
@@ -61,7 +61,7 @@ export const FreeTrialOverlay = ({ remainingSeconds, trialExpired }: FreeTrialOv
           </div>
 
           <a
-            href={`https://wa.me/255678180123?text=${whatsappMessage}`}
+            href={`https://wa.me/255615944741?text=${whatsappMessage}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)] text-white font-semibold px-6 py-3 rounded-lg transition-colors w-full justify-center"
@@ -70,7 +70,7 @@ export const FreeTrialOverlay = ({ remainingSeconds, trialExpired }: FreeTrialOv
             Confirm Payment via WhatsApp
           </a>
 
-          <p className="text-xs text-muted-foreground mt-3">+255 678 180 123</p>
+          <p className="text-xs text-muted-foreground mt-3">+255 615 741 944</p>
         </div>
       </motion.div>
     );

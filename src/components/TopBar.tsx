@@ -19,7 +19,7 @@ export const TopBar = () => {
               className="w-8 h-8 rounded-md object-cover"
             />
             <span className="font-display font-bold text-lg tracking-tight">
-              Uhuru<span className="text-primary"> Stream</span>
+              Mickey<span className="text-primary"> Stream</span>
             </span>
           </div>
           <div className="flex items-center gap-3">

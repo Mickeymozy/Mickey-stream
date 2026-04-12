@@ -11,7 +11,7 @@ interface Slide {
 }
 
 const fallbackSlides: Slide[] = [
-  { id: "1", image: "https://images.unsplash.com/photo-1461896836934-bd45ba48b2b5?w=800&q=80", title: "Welcome to Uhuru Stream", description: "Watch live channels in HD quality" },
+  { id: "1", image: "https://images.unsplash.com/photo-1461896836934-bd45ba48b2b5?w=800&q=80", title: "Welcome to Mickey Stream", description: "Watch live channels in HD quality" },
 ];
 
 export const HeroBanner = () => {

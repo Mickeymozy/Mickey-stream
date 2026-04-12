@@ -29,7 +29,7 @@ const translations: Record<string, Record<string, string>> = {
     blocked: "Blocked",
     trialExpired: "Trial Expired",
     trialMessage: "Your 2-minute free trial has ended.",
-    paymentMessage: "To activate your subscription, send payment proof screenshot to WhatsApp: +255678180123",
+    paymentMessage: "To activate your subscription, send payment proof screenshot to WhatsApp: +255615944741",
     suggestedChannels: "Suggested Channels",
     noResults: "No channels found",
     notifications: "Notifications",
@@ -72,7 +72,7 @@ const translations: Record<string, Record<string, string>> = {
     blocked: "Imezuiwa",
     trialExpired: "Jaribio Limeisha",
     trialMessage: "Jaribio lako la bure la dakika 2 limeisha.",
-    paymentMessage: "Kuamilisha usajili wako, tuma picha ya uthibitisho wa malipo kwenye WhatsApp: +255678180123",
+    paymentMessage: "Kuamilisha usajili wako, tuma picha ya uthibitisho wa malipo kwenye WhatsApp: +255615944741",
     suggestedChannels: "Chaneli Zinazopendekezwa",
     noResults: "Hakuna chaneli zilizopatikana",
     notifications: "Arifa",
@@ -91,7 +91,7 @@ let currentLang = "en";
 
 export const setLanguage = (lang: string) => {
   currentLang = lang;
-  localStorage.setItem("uhuru-stream-lang", lang);
+  localStorage.setItem("Mickey-stream-lang", lang);
 };
 
 export const getLanguage = () => {

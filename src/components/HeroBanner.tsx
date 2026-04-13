@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { MANUAL_SLIDERS } from "@/lib/sliderConfig";
 
 interface Slide {
   id: string;
@@ -10,28 +9,14 @@ interface Slide {
   description: string;
 }
 
-const fallbackSlides: Slide[] = [
-  { id: "1", image: "https://images.unsplash.com/photo-1461896836934-bd45ba48b2b5?w=800&q=80", title: "Welcome to Mickey Stream", description: "Watch live channels in HD quality" },
-];
-
 export const HeroBanner = () => {
   const [current, setCurrent] = useState(0);
 
-  const { data: dbSliders } = useQuery({
-    queryKey: ["sliders-home"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("sliders")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order");
-      return data || [];
-    },
-  });
-
-  const slides: Slide[] = dbSliders && dbSliders.length > 0
-    ? dbSliders.map((s) => ({ id: s.id, image: s.image_url, title: s.title || "", description: s.description || "" }))
-    : fallbackSlides;
+  // Use manual sliders directly
+  const slides: Slide[] = MANUAL_SLIDERS
+    .filter((s) => s.is_active)
+    .sort((a, b) => a.display_order - b.display_order)
+    .map((s) => ({ id: s.id, image: s.image_url, title: s.title, description: s.description }));
 
   const next = useCallback(() => {
     setCurrent((prev) => (prev + 1) % slides.length);
@@ -46,7 +31,7 @@ export const HeroBanner = () => {
   // Reset current if slides change
   useEffect(() => {
     setCurrent(0);
-  }, [dbSliders]);
+  }, [slides]);
 
   return (
     <div className="relative w-full aspect-[16/7] rounded-xl overflow-hidden bg-card">

@@ -4,6 +4,7 @@ import { ArrowLeft, Users, UserCheck, UserX, Trash2, Crown } from "lucide-react"
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { subscriptionService } from "@/integrations/mongodb/subscriptions";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -33,22 +34,21 @@ const AdminUsers = () => {
   const assignSubMutation = useMutation({
     mutationFn: async ({ userId, duration }: { userId: string; duration: string }) => {
       const now = new Date();
-      let expires: Date;
-      if (duration === "1_week") expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      else if (duration === "2_weeks") expires = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-      else expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      let expiresAt: Date;
+      if (duration === "1_week") expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      else if (duration === "2_weeks") expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      else expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      // Deactivate old subs
-      await supabase.from("subscriptions").update({ is_active: false }).eq("user_id", userId);
-      
-      const { error } = await supabase.from("subscriptions").insert({
-        user_id: userId,
+      // Create subscription in MongoDB
+      await subscriptionService.createSubscription({
+        userId,
         duration: duration as any,
-        expires_at: expires.toISOString(),
+        startsAt: now.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+        isActive: true,
       });
-      if (error) throw error;
 
-      // Activate user
+      // Activate user in Supabase
       await supabase.from("profiles").update({ status: "active" as any }).eq("user_id", userId);
     },
     onSuccess: () => {
@@ -77,11 +77,11 @@ const AdminUsers = () => {
 
         {/* Subscription Modal */}
         {subModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] bg-background/80 backdrop-blur flex items-center justify-center p-4">
-            <div className="bg-card rounded-xl p-6 w-full max-w-sm border border-border">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 w-full max-w-sm border border-white/20 shadow-2xl">
               <h3 className="font-display font-bold text-lg mb-1">Assign Subscription</h3>
               <p className="text-sm text-muted-foreground mb-4">{subModal.name}</p>
-              <select value={subDuration} onChange={(e) => setSubDuration(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm mb-4 outline-none focus:border-primary">
+              <select value={subDuration} onChange={(e) => setSubDuration(e.target.value)} className="w-full bg-white/5 backdrop-blur border border-white/20 rounded-lg px-3 py-2 text-sm mb-4 outline-none focus:border-primary/50">
                 <option value="1_week">1 Week</option>
                 <option value="2_weeks">2 Weeks</option>
                 <option value="1_month">1 Month</option>
@@ -90,7 +90,7 @@ const AdminUsers = () => {
                 <button onClick={() => assignSubMutation.mutate({ userId: subModal.userId, duration: subDuration })} disabled={assignSubMutation.isPending} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold disabled:opacity-50">
                   {assignSubMutation.isPending ? "Assigning..." : "Assign"}
                 </button>
-                <button onClick={() => setSubModal(null)} className="px-4 py-2 rounded-lg text-sm border border-border hover:bg-accent">Cancel</button>
+                <button onClick={() => setSubModal(null)} className="px-4 py-2 rounded-lg text-sm border border-white/20 hover:bg-white/10">Cancel</button>
               </div>
             </div>
           </motion.div>
@@ -101,7 +101,7 @@ const AdminUsers = () => {
         ) : (
           <div className="space-y-2">
             {profiles?.map((user) => (
-              <div key={user.id} className="bg-card rounded-lg p-3 border border-border">
+              <div key={user.id} className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/20 hover:bg-white/10 transition-all">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{user.first_name} {user.last_name}</p>
@@ -110,16 +110,16 @@ const AdminUsers = () => {
                   <span className={`text-[10px] font-bold uppercase ${statusColor[user.status] || ""}`}>{user.status}</span>
                 </div>
                 <div className="flex gap-1.5">
-                  <button onClick={() => updateStatusMutation.mutate({ userId: user.user_id, status: "active" })} className="flex-1 bg-green-500/10 text-green-500 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-1">
+                  <button onClick={() => updateStatusMutation.mutate({ userId: user.user_id, status: "active" })} className="flex-1 bg-green-500/20 backdrop-blur border border-green-500/30 text-green-400 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-green-500/30 transition">
                     <UserCheck className="w-3 h-3" /> Activate
                   </button>
-                  <button onClick={() => updateStatusMutation.mutate({ userId: user.user_id, status: "blocked" })} className="flex-1 bg-destructive/10 text-destructive py-1 rounded text-[10px] font-bold flex items-center justify-center gap-1">
+                  <button onClick={() => updateStatusMutation.mutate({ userId: user.user_id, status: "blocked" })} className="flex-1 bg-destructive/20 backdrop-blur border border-destructive/30 text-destructive py-1 rounded text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-destructive/30 transition">
                     <UserX className="w-3 h-3" /> Block
                   </button>
-                  <button onClick={() => setSubModal({ userId: user.user_id, name: `${user.first_name} ${user.last_name}` })} className="flex-1 bg-gold/10 text-gold py-1 rounded text-[10px] font-bold flex items-center justify-center gap-1">
+                  <button onClick={() => setSubModal({ userId: user.user_id, name: `${user.first_name} ${user.last_name}` })} className="flex-1 bg-gold/20 backdrop-blur border border-gold/30 text-gold py-1 rounded text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-gold/30 transition">
                     <Crown className="w-3 h-3" /> Subscribe
                   </button>
-                  <button onClick={() => updateStatusMutation.mutate({ userId: user.user_id, status: "deleted" })} className="w-8 flex items-center justify-center rounded hover:bg-destructive/20 text-destructive">
+                  <button onClick={() => updateStatusMutation.mutate({ userId: user.user_id, status: "deleted" })} className="w-8 flex items-center justify-center rounded hover:bg-destructive/20 text-destructive border border-destructive/30">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

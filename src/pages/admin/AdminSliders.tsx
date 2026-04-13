@@ -69,24 +69,24 @@ const AdminSliders = () => {
           <button onClick={() => { resetForm(); setShowForm(true); }} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
         </div>
         {showForm && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-lg p-4 mb-4 border border-border space-y-3">
-            <input value={form.image_url} onChange={(e) => setForm(p => ({ ...p, image_url: e.target.value }))} placeholder="Image URL *" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-            <input value={form.title} onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Title" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-            <input value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Description" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-            <input type="number" value={form.display_order} onChange={(e) => setForm(p => ({ ...p, display_order: parseInt(e.target.value) || 0 }))} placeholder="Order" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 backdrop-blur-md rounded-xl p-4 mb-4 border border-white/20 space-y-3">
+            <input value={form.image_url} onChange={(e) => setForm(p => ({ ...p, image_url: e.target.value }))} placeholder="Image URL *" className="w-full bg-white/5 backdrop-blur border border-white/20 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 text-white placeholder-white/50" />
+            <input value={form.title} onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Title" className="w-full bg-white/5 backdrop-blur border border-white/20 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 text-white placeholder-white/50" />
+            <input value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Description" className="w-full bg-white/5 backdrop-blur border border-white/20 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 text-white placeholder-white/50" />
+            <input type="number" value={form.display_order} onChange={(e) => setForm(p => ({ ...p, display_order: parseInt(e.target.value) || 0 }))} placeholder="Order" className="w-full bg-white/5 backdrop-blur border border-white/20 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 text-white placeholder-white/50" />
             <div className="flex gap-2">
-              <button onClick={handleSave} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold">{editId ? "Update" : "Add Slider"}</button>
-              <button onClick={resetForm} className="px-4 py-2 rounded-lg text-sm border border-border hover:bg-accent">Cancel</button>
+              <button onClick={handleSave} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition">{editId ? "Update" : "Add Slider"}</button>
+              <button onClick={resetForm} className="px-4 py-2 rounded-lg text-sm border border-white/20 hover:bg-white/10 transition">Cancel</button>
             </div>
           </motion.div>
         )}
         <div className="space-y-2">
           {sliders.map((s) => (
-            <div key={s.id} className="bg-card rounded-lg p-3 flex items-center gap-3 border border-border">
+            <div key={s.id} className="bg-white/5 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/20 hover:bg-white/10 transition">
               {s.image_url && <img src={s.image_url} alt={s.title} className="w-16 h-10 rounded object-cover" />}
               <div className="flex-1"><p className="text-sm font-medium">{s.title || "Untitled"}</p><p className="text-[10px] text-muted-foreground">Order: {s.display_order}</p></div>
-              <button onClick={() => { setEditId(s.id); setForm({ image_url: s.image_url, title: s.title, description: s.description, display_order: s.display_order }); setShowForm(true); }} className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent"><Pencil className="w-3.5 h-3.5" /></button>
-              <button onClick={() => handleDelete(s.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-destructive/20 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+              <button onClick={() => { setEditId(s.id); setForm({ image_url: s.image_url, title: s.title, description: s.description, display_order: s.display_order }); setShowForm(true); }} className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/20 transition"><Pencil className="w-3.5 h-3.5" /></button>
+              <button onClick={() => handleDelete(s.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-destructive/30 text-destructive border border-destructive/30"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           ))}
           {sliders.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">No sliders yet</p>}

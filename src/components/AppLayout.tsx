@@ -8,7 +8,7 @@ interface AppLayoutProps {
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background bg-gradient-to-br from-background via-background to-background/80">
       <TopBar />
       <main className="pt-14 pb-32">
         {children}

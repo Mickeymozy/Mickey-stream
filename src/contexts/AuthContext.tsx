@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { subscriptionService } from "@/integrations/mongodb/subscriptions";
 import type { User, Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
@@ -39,7 +40,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserData = async (userId: string, email: string | undefined) => {
     // 1. HARDCODED ADMIN CHECK
-    // Hapa tunampa u-admin mickidadyhamza@gmail.com moja kwa moja
     if (email === "mickidadyhamza@gmail.com") {
       setIsAdmin(true);
     } else {
@@ -58,15 +58,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .maybeSingle();
     setProfile(profileData);
 
-    // 3. Fetch subscription
-    const { data: sub } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    setSubscription(sub);
+    // 3. Fetch subscription from MongoDB
+    try {
+      const sub = await subscriptionService.getSubscription(userId);
+      if (sub && sub.isActive) {
+        setSubscription(sub);
+      } else {
+        setSubscription(null);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      setSubscription(null);
+    }
   };
 
   useEffect(() => {

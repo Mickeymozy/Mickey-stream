@@ -9,17 +9,26 @@ interface Slide {
   description: string;
 }
 
+const STORAGE_KEY = "mickey_sliders";
+
 export const HeroBanner = () => {
   const [current, setCurrent] = useState(0);
+  const [slides, setSlides] = useState<Slide[]>([]);
 
-  // Use manual sliders directly
-  const slides: Slide[] = MANUAL_SLIDERS
-    .filter((s) => s.is_active)
-    .sort((a, b) => a.display_order - b.display_order)
-    .map((s) => ({ id: s.id, image: s.image_url, title: s.title, description: s.description }));
+  // Load sliders from localStorage or use defaults
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const sliderData = saved ? JSON.parse(saved) : MANUAL_SLIDERS;
+    const filtered = sliderData
+      .filter((s: any) => s.is_active)
+      .sort((a: any, b: any) => a.display_order - b.display_order)
+      .map((s: any) => ({ id: s.id, image: s.image_url, title: s.title, description: s.description }));
+    setSlides(filtered);
+  }, []);
 
   const next = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % slides.length);
+    setSlides((prev) => (prev.length > 0 ? prev : slides));
+    setCurrent((prev) => (prev + 1) % Math.max(1, slides.length));
   }, [slides.length]);
 
   useEffect(() => {
@@ -28,10 +37,7 @@ export const HeroBanner = () => {
     return () => clearInterval(timer);
   }, [next, slides.length]);
 
-  // Reset current if slides change
-  useEffect(() => {
-    setCurrent(0);
-  }, [slides]);
+  if (slides.length === 0) return null;
 
   return (
     <div className="relative w-full aspect-[16/7] rounded-xl overflow-hidden bg-card">

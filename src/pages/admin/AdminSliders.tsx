@@ -2,15 +2,25 @@ import { AppLayout } from "@/components/AppLayout";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, Pencil, Trash2, Image } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { MANUAL_SLIDERS, type Slider } from "@/lib/sliderConfig";
 
+const STORAGE_KEY = "mickey_sliders";
+
 const AdminSliders = () => {
-  const [sliders, setSliders] = useState<Slider[]>(MANUAL_SLIDERS);
+  const [sliders, setSliders] = useState<Slider[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : MANUAL_SLIDERS;
+  });
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ image_url: "", title: "", description: "", display_order: 0 });
+
+  // Save to localStorage whenever sliders change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sliders));
+  }, [sliders]);
 
   const handleSave = () => {
     if (!form.image_url.trim()) {

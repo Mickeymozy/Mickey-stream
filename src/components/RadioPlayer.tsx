@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { Play, Pause, X, Radio, ChevronUp, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { radioStationService } from "@/integrations/mongodb/radioStations";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface RadioStation {
-  id: string;
+  _id?: string;
+  id?: string;
   name: string;
-  stream_url: string;
-  logo_url: string | null;
-  is_active: boolean;
+  streamUrl: string;
+  logoUrl?: string | null;
+  isActive?: boolean;
 }
 
 export const RadioPlayer = () => {
@@ -21,18 +22,14 @@ export const RadioPlayer = () => {
   const { data: stations } = useQuery({
     queryKey: ["radio-stations"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("radio_stations")
-        .select("*")
-        .eq("is_active", true)
-        .order("name");
-      return (data || []) as RadioStation[];
+      const stationList = await radioStationService.getRadioStations();
+      return stationList.filter((s) => s.isActive !== false);
     },
   });
 
   useEffect(() => {
     if (!audioRef.current || !currentStation) return;
-    audioRef.current.src = currentStation.stream_url;
+    audioRef.current.src = currentStation.streamUrl;
     audioRef.current.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
   }, [currentStation]);
 
@@ -72,14 +69,14 @@ export const RadioPlayer = () => {
               <div className="max-h-48 overflow-y-auto p-2 space-y-1">
                 {stations.map((s) => (
                   <button
-                    key={s.id}
+                    key={s._id || s.id || s.name}
                     onClick={() => selectStation(s)}
                     className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                      currentStation?.id === s.id ? "bg-primary/20" : "hover:bg-accent/30"
+                      (currentStation?._id === s._id || currentStation?.id === s.id) ? "bg-primary/20" : "hover:bg-accent/30"
                     }`}
                   >
-                    {s.logo_url ? (
-                      <img src={s.logo_url} alt={s.name} className="w-8 h-8 rounded-full object-cover bg-black" />
+                    {s.logoUrl ? (
+                      <img src={s.logoUrl} alt={s.name} className="w-8 h-8 rounded-full object-cover bg-black" />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                         <Radio className="w-4 h-4 text-primary" />
@@ -97,8 +94,8 @@ export const RadioPlayer = () => {
         <div className="bg-card/95 backdrop-blur-lg border-t border-border px-3 py-2">
           <div className="flex items-center gap-3 max-w-lg mx-auto">
             <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-2 flex-1 min-w-0">
-              {currentStation?.logo_url ? (
-                <img src={currentStation.logo_url} alt="" className="w-8 h-8 rounded-full object-cover bg-black flex-shrink-0" />
+              {currentStation?.logoUrl ? (
+                <img src={currentStation.logoUrl} alt="" className="w-8 h-8 rounded-full object-cover bg-black flex-shrink-0" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                   <Radio className="w-4 h-4 text-primary" />

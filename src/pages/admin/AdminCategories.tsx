@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Plus, Pencil, Trash2, Grid3x3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { categoryService } from "@/integrations/mongodb/categories";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -11,31 +11,35 @@ const AdminCategories = () => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", icon: "", display_order: 0 });
+  const [form, setForm] = useState({ name: "", icon: "", displayOrder: 0 });
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ["admin-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("*").order("display_order");
-      if (error) throw error;
-      return data;
+      return await categoryService.getCategories();
     },
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { name: form.name, icon: form.icon || null, display_order: form.display_order };
       if (editId) {
-        const { error } = await supabase.from("categories").update(payload).eq("id", editId);
-        if (error) throw error;
+        await categoryService.updateCategory(editId, {
+          name: form.name,
+          icon: form.icon || undefined,
+          displayOrder: form.displayOrder,
+        });
       } else {
-        const { error } = await supabase.from("categories").insert(payload);
-        if (error) throw error;
+        await categoryService.createCategory({
+          name: form.name,
+          icon: form.icon || undefined,
+          displayOrder: form.displayOrder,
+        });
       }
     },
     onSuccess: () => {
       toast.success(editId ? "Category updated" : "Category added");
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
       resetForm();
     },
     onError: (e: any) => toast.error(e.message),
@@ -43,14 +47,17 @@ const AdminCategories = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("categories").delete().eq("id", id);
-      if (error) throw error;
+      await categoryService.deleteCategory(id);
     },
-    onSuccess: () => { toast.success("Deleted"); queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); },
+    onSuccess: () => { 
+      toast.success("Deleted"); 
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); 
+      queryClient.invalidateQueries({ queryKey: ["categories"] }); 
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const resetForm = () => { setShowForm(false); setEditId(null); setForm({ name: "", icon: "", display_order: 0 }); };
+  const resetForm = () => { setShowForm(false); setEditId(null); setForm({ name: "", icon: "", displayOrder: 0 }); };
 
   return (
     <AppLayout>
@@ -69,7 +76,7 @@ const AdminCategories = () => {
             <input value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Category Name" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
             <div className="grid grid-cols-2 gap-3">
               <input value={form.icon} onChange={(e) => setForm(p => ({ ...p, icon: e.target.value }))} placeholder="Icon (emoji)" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-              <input type="number" value={form.display_order} onChange={(e) => setForm(p => ({ ...p, display_order: parseInt(e.target.value) || 0 }))} placeholder="Order" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+              <input type="number" value={form.displayOrder} onChange={(e) => setForm(p => ({ ...p, displayOrder: parseInt(e.target.value) || 0 }))} placeholder="Order" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
             </div>
             <div className="flex gap-2">
               <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold disabled:opacity-50">
@@ -85,11 +92,11 @@ const AdminCategories = () => {
         ) : (
           <div className="space-y-2">
             {categories?.map((cat) => (
-              <div key={cat.id} className="bg-card rounded-lg p-3 flex items-center gap-3 border border-border">
+              <div key={cat._id} className="bg-card rounded-lg p-3 flex items-center gap-3 border border-border">
                 <span className="text-2xl">{cat.icon}</span>
-                <div className="flex-1"><p className="text-sm font-medium">{cat.name}</p><p className="text-[10px] text-muted-foreground">Order: {cat.display_order}</p></div>
-                <button onClick={() => { setEditId(cat.id); setForm({ name: cat.name, icon: cat.icon || "", display_order: cat.display_order }); setShowForm(true); }} className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent"><Pencil className="w-3.5 h-3.5" /></button>
-                <button onClick={() => deleteMutation.mutate(cat.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-destructive/20 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                <div className="flex-1"><p className="text-sm font-medium">{cat.name}</p><p className="text-[10px] text-muted-foreground">Order: {cat.displayOrder}</p></div>
+                <button onClick={() => { setEditId(cat._id!); setForm({ name: cat.name, icon: cat.icon || "", displayOrder: cat.displayOrder }); setShowForm(true); }} className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent"><Pencil className="w-3.5 h-3.5" /></button>
+                <button onClick={() => deleteMutation.mutate(cat._id!)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-destructive/20 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             ))}
           </div>

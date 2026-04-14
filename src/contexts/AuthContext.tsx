@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { subscriptionService } from "@/integrations/mongodb/subscriptions";
+import { profileService } from "@/integrations/mongodb/profiles";
 import type { User, Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
@@ -50,13 +51,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAdmin(roles?.some((r) => r.role === "admin") ?? false);
     }
 
-    // 2. Fetch profile
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-    setProfile(profileData);
+    // 2. Fetch profile from MongoDB
+    try {
+      const profileData = await profileService.getProfile(userId);
+      setProfile(profileData);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      setProfile(null);
+    }
 
     // 3. Fetch subscription from MongoDB
     try {
@@ -120,7 +122,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, phone: string) => {
-    const { error } = await supabase.auth.signUp({
+    // Sign up user in Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -128,6 +131,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     if (error) throw error;
+
+    // Create profile in MongoDB
+    if (data.user?.id) {
+      try {
+        await profileService.createProfile({
+          userId: data.user.id,
+          firstName,
+          lastName,
+          email,
+          status: "pending", // User status starts as pending until email verified
+        });
+      } catch (profileError) {
+        console.error("Error creating profile in MongoDB:", profileError);
+        // Don't fail the signup if profile creation fails
+      }
+    }
   };
 
   const signOut = async () => {

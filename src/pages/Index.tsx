@@ -8,21 +8,22 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { categoryService } from "@/integrations/mongodb/categories";
+import { matchService } from "@/integrations/mongodb/matches";
 
 const Index = () => {
   const navigate = useNavigate();
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("*").order("display_order");
-      return data || [];
+      return await categoryService.getCategories();
     },
   });
 
   const { data: channels, isLoading: channelsLoading } = useQuery({
     queryKey: ["channels"],
     queryFn: async () => {
-      const { data } = await supabase.from("channels").select("*, categories(name, icon)").order("channel_number");
+      const { data } = await supabase.from("channels").select("*").order("channel_number");
       return data || [];
     },
   });
@@ -30,14 +31,13 @@ const Index = () => {
   const { data: matches } = useQuery({
     queryKey: ["matches"],
     queryFn: async () => {
-      const { data } = await supabase.from("matches").select("*, channels(name)").order("display_order");
-      return data || [];
+      return await matchService.getMatches();
     },
   });
 
   const channelsByCategory = categories?.map((cat) => ({
     ...cat,
-    channels: channels?.filter((ch) => ch.category_id === cat.id) || [],
+    channels: channels?.filter((ch) => ch.category_id === cat._id) || [],
   })) || [];
 
   return (

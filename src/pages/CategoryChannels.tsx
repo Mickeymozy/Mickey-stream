@@ -4,6 +4,7 @@ import { ChannelCardSkeleton } from "@/components/Skeletons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { categoryService } from "@/integrations/mongodb/categories";
 import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -14,8 +15,8 @@ const CategoryChannels = () => {
   const { data: category } = useQuery({
     queryKey: ["category", id],
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("*").eq("id", id!).single();
-      return data;
+      const cat = await categoryService.getCategoryById(id!);
+      return cat;
     },
     enabled: !!id,
   });
@@ -25,7 +26,7 @@ const CategoryChannels = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("channels")
-        .select("*, categories(name)")
+        .select("*")
         .eq("category_id", id!)
         .eq("is_active", true)
         .order("channel_number");
@@ -58,7 +59,7 @@ const CategoryChannels = () => {
                   id={ch.id}
                   name={ch.name}
                   image={ch.image_url || "https://images.unsplash.com/photo-1461896836934-bd45ba48b2b5?w=300&q=80"}
-                  category={(ch as any).categories?.name || ""}
+                  category={category?.name || ""}
                   isPro={ch.is_pro}
                   channelNumber={ch.channel_number || undefined}
                   gridMode
@@ -74,6 +75,7 @@ const CategoryChannels = () => {
       </motion.div>
     </AppLayout>
   );
+};
 };
 
 export default CategoryChannels;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader2, AlertTriangle, Maximize, Minimize, Volume2, VolumeX, Settings, Subtitles } from "lucide-react";
 import Hls from "hls.js";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { appConfigService } from "@/integrations/mongodb/appConfig";
 
 interface VideoPlayerProps {
   streamUrl: string;
@@ -46,16 +46,12 @@ export const VideoPlayer = ({
   const mountedRef = useRef(true);
   const playTimeRef = useRef(0);
 
-  // Fetch global token from app_config (MPD only)
+  // Fetch global token from MongoDB app_config (MPD only)
   const { data: globalTokenConfig } = useQuery({
     queryKey: ["app-config", "global_token"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", "global_token")
-        .single();
-      return data?.value || "";
+      const token = await appConfigService.getGlobalToken();
+      return token || "";
     },
     staleTime: 60000,
   });
@@ -72,7 +68,10 @@ export const VideoPlayer = ({
     const resolvedType = detectStreamType(url, streamType);
     if (resolvedType !== "mpd") return [url];
     const globalToken = String(globalTokenConfig || "").trim();
-    if (!globalToken) return [url];
+    if (!globalToken) {
+      console.warn("[VideoPlayer] No global token configured. MPD stream may fail. Check MongoDB app_config.global_token");
+      return [url];
+    }
     const separator = url.includes("?") ? "&" : "?";
     const encodedToken = encodeURIComponent(globalToken);
     return Array.from(new Set([
@@ -129,6 +128,10 @@ export const VideoPlayer = ({
 
     const config: any = {
       manifest: { dash: { ignoreMinBufferTime: true } },
+      streaming: { 
+        rebufferingGoal: 2,
+        bufferingGoal: 8,
+      },
     };
 
     if (trimmedKeyId && trimmedKey) {
@@ -139,28 +142,50 @@ export const VideoPlayer = ({
     player.configure(config);
 
     player.addEventListener("error", (e: any) => {
-      console.error("[VideoPlayer] Shaka error:", e.detail?.code, e.detail);
-      if (mountedRef.current) { setError("Stream playback error"); onError?.(); }
+      const errorCode = e.detail?.code;
+      const errorMessage = e.detail?.message || "Unknown error";
+      console.error("[VideoPlayer] Shaka error:", { code: errorCode, message: errorMessage, detail: e.detail });
+      if (mountedRef.current) { 
+        setError(`Playback error: ${errorMessage}`);
+        onError?.(); 
+      }
     });
 
     try {
       const mpdUrls = getMpdUrlCandidates(streamUrl);
       let loaded = false;
       let lastError: unknown;
+      const errors: string[] = [];
 
-      for (const finalUrl of mpdUrls) {
-        console.log("[VideoPlayer] Final URL:", finalUrl);
+      console.log("[VideoPlayer] Attempting to load MPD with", mpdUrls.length, "URL candidate(s)");
+      
+      for (let i = 0; i < mpdUrls.length; i++) {
+        const finalUrl = mpdUrls[i];
+        console.log(`[VideoPlayer] Attempt ${i + 1}/${mpdUrls.length}:`, finalUrl);
         try {
           await player.load(finalUrl);
           loaded = true;
+          console.log("[VideoPlayer] ✓ Successfully loaded MPD stream");
           break;
-        } catch (loadErr) {
+        } catch (loadErr: any) {
           lastError = loadErr;
-          console.warn("[VideoPlayer] MPD load attempt failed:", finalUrl, loadErr);
+          const errorMsg = loadErr?.message || String(loadErr);
+          errors.push(`URL ${i + 1}: ${errorMsg}`);
+          console.warn("[VideoPlayer] ✗ MPD load attempt failed:", { url: finalUrl, error: errorMsg });
         }
       }
 
-      if (!loaded) throw lastError || new Error("Failed to load MPD stream");
+      if (!loaded) {
+        const diagnostics = [
+          `Failed to load MPD stream after ${mpdUrls.length} attempts`,
+          `Stream URL: ${streamUrl}`,
+          `Token configured: ${globalTokenConfig ? 'Yes' : 'No (check MongoDB app_config.global_token)'}`,
+          `DRM configured: ${trimmedKeyId ? 'Yes' : 'No'}`,
+          ...errors
+        ].join("\n");
+        console.error("[VideoPlayer] MPD Load Diagnostics:\n" + diagnostics);
+        throw new Error(diagnostics);
+      }
       if (!mountedRef.current) return;
 
       setLoading(false);
@@ -186,8 +211,12 @@ export const VideoPlayer = ({
 
       videoRef.current?.play().catch(() => {});
     } catch (err: any) {
-      console.error("[VideoPlayer] MPD load error:", err);
-      if (mountedRef.current) { setError("Failed to load MPD stream"); setLoading(false); }
+      const errorMsg = err?.message || String(err);
+      console.error("[VideoPlayer] MPD initialization failed:", errorMsg);
+      if (mountedRef.current) { 
+        setError(`Failed to load MPD stream: ${errorMsg}`); 
+        setLoading(false); 
+      }
     }
   }, [streamUrl, keyId, drmKey, getMpdUrlCandidates, onError]);
 

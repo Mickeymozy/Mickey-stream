@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { sliderService } from "@/integrations/mongodb/sliders";
 import { MANUAL_SLIDERS } from "@/lib/sliderConfig";
 
 interface Slide {
-  id: string;
-  image: string;
+  id?: string;
+  _id?: string;
+  image?: string;
+  imageUrl?: string;
   title: string;
-  description: string;
+  description?: string;
 }
 
 const STORAGE_KEY = "mickey_sliders";
@@ -15,16 +19,43 @@ export const HeroBanner = () => {
   const [current, setCurrent] = useState(0);
   const [slides, setSlides] = useState<Slide[]>([]);
 
-  // Load sliders from localStorage or use defaults
+  // Fetch sliders from MongoDB
+  const { data: mongoSliders } = useQuery({
+    queryKey: ["sliders"],
+    queryFn: async () => {
+      try {
+        return await sliderService.getActiveSliders();
+      } catch (error) {
+        console.warn("[HeroBanner] MongoDB sliders fetch failed, falling back to local data:", error);
+        return null;
+      }
+    },
+  });
+
+  // Load sliders from MongoDB, localStorage, or defaults
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const sliderData = saved ? JSON.parse(saved) : MANUAL_SLIDERS;
+    let sliderData: any[] = [];
+
+    // Try MongoDB first
+    if (mongoSliders && mongoSliders.length > 0) {
+      sliderData = mongoSliders;
+    } else {
+      // Try localStorage
+      const saved = localStorage.getItem(STORAGE_KEY);
+      sliderData = saved ? JSON.parse(saved) : MANUAL_SLIDERS;
+    }
+
     const filtered = sliderData
-      .filter((s: any) => s.is_active)
-      .sort((a: any, b: any) => a.display_order - b.display_order)
-      .map((s: any) => ({ id: s.id, image: s.image_url, title: s.title, description: s.description }));
+      .filter((s: any) => s.isActive !== false)
+      .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+      .map((s: any) => ({
+        id: s._id || s.id,
+        image: s.imageUrl || s.image_url,
+        title: s.title,
+        description: s.description,
+      }));
     setSlides(filtered);
-  }, []);
+  }, [mongoSliders]);
 
   const next = useCallback(() => {
     setSlides((prev) => (prev.length > 0 ? prev : slides));

@@ -1,7 +1,7 @@
 import { Bell, X, Check } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { notificationService } from "@/integrations/mongodb/notifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,13 +14,13 @@ export const NotificationBell = () => {
     queryKey: ["notifications", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .or(`is_global.eq.true,user_id.eq.${user.id}`)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      return data || [];
+      // Fetch user notifications and global notifications
+      const userNotifications = await notificationService.getUserNotifications(user.id);
+      const globalNotifications = await notificationService.getGlobalNotifications();
+      // Combine and sort by date
+      return [...userNotifications, ...globalNotifications].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ).slice(0, 20);
     },
     enabled: !!user,
     refetchInterval: 30000,
@@ -28,12 +28,12 @@ export const NotificationBell = () => {
 
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+      await notificationService.markAsRead(id);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  const unreadCount = notifications?.filter((n) => !n.is_read).length || 0;
+  const unreadCount = notifications?.filter((n) => !n.isRead).length || 0;
 
   return (
     <div className="relative">

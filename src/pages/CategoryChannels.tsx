@@ -76,6 +76,5 @@ const CategoryChannels = () => {
     </AppLayout>
   );
 };
-};
 
 export default CategoryChannels;
